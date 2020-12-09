@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Install required packages
-apt install update
+apt update
 apt install nfs-common -y
 
 #Create the destination directory
