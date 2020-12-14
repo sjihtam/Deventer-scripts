@@ -1,0 +1,7 @@
+function FindProxyForURL(url, host) {
+  if ((url.startsWith("http:") || url.startsWith("https:")) && (!isPlainHostName(host) && !dnsDomainIs(host, ".deventer.local"))) {
+    return "PROXY squid.deventer.local:3128; DIRECT";
+  } else {
+    return "DIRECT";
+  }
+}
