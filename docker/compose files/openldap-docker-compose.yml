@@ -1,0 +1,77 @@
+version: '3.2'
+services:
+
+  radius:
+    image: irasnyd/freeradius-ldap:latest
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+    environment:
+      - "LDAP_HOST=openldap"
+      - "LDAP_USER=cn=admin,dc=deventer,dc=local"
+      - "LDAP_PASS=TweakersExpress6!"
+      - "LDAP_BASEDN=dc=deventer,dc=local"
+      - "LDAP_USER_BASEDN=ou=Users,dc=deventer,dc=local"
+      - "LDAP_GROUP_BASEDN=ou=Groups,dc=deventer,dc=local"
+        #- "LDAP_RADIUS_ACCESS_GROUP=vpnaccess"
+      - "RADIUS_CLIENT_CREDENTIALS=10.16.1.15:TweakersExpress6!,10.0.0.9:TweakersExpress6!,172.16.12.0/22:TweakersExpress6!"
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:latest
+    container_name: phpldapadmin
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: "ldap.deventer.local"
+      PHPLDAPADMIN_HTTPS: "false"
+      #PHPLDAPADMIN_CLIENT_TLS: "true"
+      #PHPLDAPADMIN_CLIENT_TLS_CA_CRT_FILENAME: "/etc/docker/shared/ldap/ldap.deventer.local.crt"
+    ports:
+      - "8081:80"
+    depends_on:
+      - openldap
+  openldap:
+    image: osixia/openldap:1.4.0
+    container_name: openldap
+    environment:
+      LDAP_LOG_LEVEL: "64"
+      LDAP_ORGANISATION: "Universiteit van Deventer"
+      LDAP_DOMAIN: "deventer.local"
+      LDAP_BASE_DN: "dc=deventer,dc=local"
+      LDAP_ADMIN_PASSWORD: "TweakersExpress6!"
+      LDAP_CONFIG_PASSWORD: "TweakersExpress6!"
+      LDAP_READONLY_USER: "true"
+      LDAP_READONLY_USER_USERNAME: "readonly"
+      LDAP_READONLY_USER_PASSWORD: "readonly"
+      LDAP_RFC2307BIS_SCHEMA: "false"
+      LDAP_BACKEND: "mdb"
+      LDAP_TLS: "true"
+      LDAP_TLS_CRT_FILENAME: "ldap.deventer.local.crt"
+      LDAP_TLS_KEY_FILENAME: "ldap.deventer.local.key"
+      LDAP_TLS_DH_PARAM_FILENAME: "dhparam.pem"
+      LDAP_TLS_CA_CRT_FILENAME: "ldap.deventer.local.crt"
+      LDAP_TLS_ENFORCE: "false"
+      LDAP_TLS_CIPHER_SUITE: "SECURE256:-VERS-SSL3.0"
+      LDAP_TLS_VERIFY_CLIENT: "try"
+      LDAP_REPLICATION: "false"
+      #LDAP_REPLICATION_CONFIG_SYNCPROV: "binddn="cn=admin,cn=config" bindmethod=simple credentials=$$LDAP_CONFIG_PASSWORD searchbase="cn=config" type=refreshAndPersist retry="60 +" timeout=1 starttls=critical"
+      #LDAP_REPLICATION_DB_SYNCPROV: "binddn="cn=admin,$$LDAP_BASE_DN" bindmethod=simple credentials=$$LDAP_ADMIN_PASSWORD searchbase="$$LDAP_BASE_DN" type=refreshAndPersist interval=00:00:00:10 retry="60 +" timeout=1 starttls=critical"
+      #LDAP_REPLICATION_HOSTS: "#PYTHON2BASH:['ldap://ldap.example.org','ldap://ldap2.example.org']"
+      KEEP_EXISTING_CONFIG: "false"
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
+      LDAP_SSL_HELPER_PREFIX: "ldap"
+    tty: false
+    stdin_open: true
+    volumes:
+       - /mnt/dockershare/ldap/data/slapd/database:/var/lib/ldap
+       - /mnt/dockershare/ldap/data/slapd/config:/etc/ldap/slapd.d
+       - /mnt/dockershare/ldap/certs:/container/service/slapd/assets/certs/
+      #- /etc/docker/shared/ldap/data/slapd/database:/var/lib/ldap
+      #- /etc/docker/shared/ldap/data/slapd/config:/etc/ldap/slapd.d
+      #- /etc/docker/shared/ldap/certs:/container/service/slapd/assets/certs/
+    ports:
+      - "389:389"
+      - "636:636"
+    # For replication to work correctly, domainname and hostname must be
+    # set correctly so that "hostname"."domainname" equates to the
+    # fully-qualified domain name for the host.
+    domainname: "ldap.deventer.local"
+    hostname: "ldap.deventer.local"

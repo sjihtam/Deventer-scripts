@@ -1,0 +1,15 @@
+version: '3.2'
+
+services:
+  bind:
+    image: sameersbn/bind
+    environment:
+     - ROOT_PASSWORD=TweakersExpress6!
+    ports:
+      - 53:53/udp
+      - 53:53/tcp
+      - 10000:10000
+    volumes:
+      - /mnt/dockershare/bind:/data
+    deploy:
+      replicas: 1

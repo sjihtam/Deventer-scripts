@@ -1,0 +1,134 @@
+version: '3.6'
+
+services:
+
+# External dependencies
+  redis:
+    image: redis:alpine
+    volumes:
+            #- mailu-shared-redis:/data
+      - "/mnt/dockershare/mailu/redis:/data"
+    deploy:
+      replicas: 1
+
+# Core services
+
+  front:
+    image: ${DOCKER_ORG:-mailu}/${DOCKER_PREFIX:-}nginx:${MAILU_VERSION:-1.7}
+    env_file: mailu.env
+    hostname: front
+    healthcheck:
+      disable: true
+    logging:
+      driver: json-file
+    ports:
+      - target: 80
+        published: 8082
+        mode: overlay
+      - target: 443
+        published: 4433
+        mode: overlay
+      - target: 25
+        published: 25
+        mode: overlay
+      - target: 465
+        published: 465
+        mode: overlay
+      - target: 587
+        published: 587
+        mode: overlay
+      - target: 110
+        published: 110
+        mode: overlay
+      - target: 995
+        published: 995
+        mode: overlay
+      - target: 143
+        published: 143
+        mode: overlay
+      - target: 993
+        published: 993
+        mode: overlay
+    volumes:
+            #- mailu-shared-certs:/certs
+            #- mailu-shared-overrides-nginx:/overrides
+      - "/mnt/dockershare/mailu/certs:/certs"
+      - "/mnt/dockershare/mailu/overrides/nginx:/overrides"
+    deploy:
+      replicas: 1
+
+  admin:
+    image: ${DOCKER_ORG:-mailu}/${DOCKER_PREFIX:-}admin:${MAILU_VERSION:-1.7}
+    healthcheck:
+      disable: true
+    env_file: mailu.env
+    environment:
+      - POD_ADDRESS_RANGE=10.0.8.0/24
+    volumes:
+        # - mailu-shared-data:/data
+        # - mailu-shared-dkim:/dkim
+      - "/mnt/dockershare/mailu/data:/data"
+      - "/mnt/dockershare/mailu/dkim:/dkim"
+    deploy:
+      replicas: 1
+
+  imap:
+    image: ${DOCKER_ORG:-mailu}/${DOCKER_PREFIX:-}dovecot:${MAILU_VERSION:-1.7}
+    healthcheck:
+      disable: true
+    env_file: mailu.env
+    volumes:
+            #- mailu-shared-mail:/mail
+            #- mailu-shared-overrides:/overrides
+      - "/mnt/dockershare/mailu/mail:/mail"
+      - "/mnt/dockershare/mailu/overrides:/overrides"
+    deploy:
+      replicas: 1
+
+  smtp:
+    image: ${DOCKER_ORG:-mailu}/${DOCKER_PREFIX:-}postfix:${MAILU_VERSION:-1.7}
+    healthcheck:
+      disable: true
+    env_file: mailu.env
+    environment:
+      - POD_ADDRESS_RANGE=10.0.8.0/24
+    volumes:
+            #- mailu-shared-overrides:/overrides
+      - "/mnt/dockershare/mailu/overrides:/overrides"
+    deploy:
+      replicas: 1
+
+
+  antispam:
+    image: ${DOCKER_ORG:-mailu}/${DOCKER_PREFIX:-}rspamd:${MAILU_VERSION:-1.7}
+    restart: always
+    env_file: mailu.env
+    environment:
+      - POD_ADDRESS_RANGE=10.0.8.0/24
+    volumes:
+        #- mailu-shared-filter:/var/lib/rspamd
+        #- mailu-shared-dkim:/dkim
+        #- mailu-shared-overrides-rspamd:/etc/rspamd/override.d
+      - "/mnt/dockershare/mailu/filter:/var/lib/rspamd"
+      - "/mnt/dockershare/mailu/dkim:/dkim"
+      - "/mnt/dockershare/mailu/overrides/rspamd:/etc/rspamd/override.d"
+    deploy:
+      replicas: 1
+
+  # Optional services
+
+  webmail:
+    image: ${DOCKER_ORG:-mailu}/${DOCKER_PREFIX:-}roundcube:${MAILU_VERSION:-1.7}
+    restart: always
+    env_file: mailu.env
+    volumes:
+            #- mailu-shared-webmail:/data
+      - "/mnt/dockershare/mailu/webmail:/data"
+    deploy:
+      replicas: 1
+
+
+networks:
+  default:
+    external:
+      name: mailu_default
