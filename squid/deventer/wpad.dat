@@ -1,0 +1,11 @@
+function FindProxyForURL(url, host) {
+  if (
+    (url.startsWith("http:") || url.startsWith("https:")) && 
+      (!isPlainHostName(host) && (!dnsDomainIs(host, ".deventer.local" || !dnsDomainIs(host, ".uvh.local" || !dnsDomainIs(host, ".ijsselstreek-university.local")
+    )
+  ) {
+    return "PROXY proxy.deventer.local:3128; DIRECT";
+  } else {
+    return "DIRECT";
+  }
+}
