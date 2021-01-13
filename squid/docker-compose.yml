@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  proxy:
+    restart: always
+    image: sameersbn/squid:latest
+    hostname: "{{.Node.ID}}-{{.Service.Name}}"
+    ports:
+      - "3128:3128"
+    deploy:
+      restart: always
+      replicas: 2
+      placement:
+  	    max-replicas-per-node: 1 
+        # https://github.com/docker/cli/pull/1410 Gebruik van "--replicas-max-per-node 1" mogelijk in docker service create
+        constraints: [node.label == proxy]
+    logging:
+      driver: json-file
+    configs:
+      - source: squid.conf
+        target: /etc/squid/squid.conf
